@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SignConnect - Video Call with Sign Language Translation</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        .gradient-bg {
+            background: linear-gradient(120deg, #4f46e5 0%, #7c3aed 100%);
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 1rem;
+            box-shadow: 0 8px 32px rgba(31, 38, 135, 0.15);
+        }
+        .btn-primary {
+            background: linear-gradient(90deg, #4f46e5 0%, #7c3aed 100%);
+            transition: all 0.3s ease;
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(79, 70, 229, 0.2);
+        }
+        .btn-secondary {
+            transition: all 0.3s ease;
+        }
+        .btn-secondary:hover {
+            transform: translateY(-2px);
+        }
+        .feature-icon {
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+        }
+        .animation-pulse {
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(79, 70, 229, 0.7);
+            }
+            70% {
+                box-shadow: 0 0 0 10px rgba(79, 70, 229, 0);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(79, 70, 229, 0);
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Navigation -->
+    <nav class="bg-white shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0 flex items-center">
+                        <i class="fas fa-hands text-indigo-600 text-3xl mr-2"></i>
+                        <span class="font-bold text-xl text-gray-800">SignConnect</span>
+                    </div>
+                </div>
+                <div class="flex items-center">
+                    <a href="#" class="text-gray-600 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium">About</a>
+                    <a href="#" class="text-gray-600 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium">Features</a>
+                    <a href="#" class="text-gray-600 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium">Help</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <div class="gradient-bg py-12 sm:py-20">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="lg:flex lg:items-center lg:justify-between">
+                <div class="lg:w-1/2 mb-10 lg:mb-0">
+                    <h1 class="text-4xl sm:text-5xl font-extrabold text-white leading-tight">
+                        Connect and Communicate Without Barriers
+                    </h1>
+                    <p class="mt-3 text-lg text-indigo-100 sm:mt-5">
+                        Real-time sign language translation in your video calls with bi-directional support: speech-to-sign and sign language detection. Making communication accessible for everyone.
+                    </p>
+                    <div class="mt-8 flex flex-col sm:flex-row gap-4">
+                        <button id="createRoom" class="btn-primary px-6 py-3 border border-transparent text-base font-medium rounded-md text-white shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                            <i class="fas fa-video mr-2"></i> Create New Meeting
+                        </button>
+                        <button id="joinExisting" class="btn-secondary bg-white text-indigo-700 hover:bg-indigo-50 px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                            <i class="fas fa-sign-in-alt mr-2"></i> Join with Code
+                        </button>
+                    </div>
+                    <div class="mt-3">
+                        <p class="text-sm text-indigo-100"><i class="fas fa-info-circle mr-1"></i> Note: Always join using our application to access all sign language features.</p>
+                    </div>
+                </div>
+                <div class="lg:w-2/5">
+                    <div class="glass-card p-6 animation-pulse">
+                        <div id="roomInfo" class="hidden">
+                            <h3 class="text-lg font-medium text-gray-900 mb-4">Your Meeting is Ready!</h3>
+                            <div class="mb-4 bg-yellow-50 p-3 rounded-md border border-yellow-200">
+                                <p class="text-sm text-yellow-700"><strong>Important:</strong> Share the code below to ensure others can access all sign language features.</p>
+                            </div>
+                            <div class="space-y-4">
+                                <div>
+                                    <label for="roomUrl" class="block text-sm font-medium text-gray-700 mb-1">Meeting Code:</label>
+                                    <div class="mt-1 flex rounded-md shadow-sm">
+                                        <input type="text" id="roomUrl" readonly class="flex-1 min-w-0 block w-full px-3 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" placeholder="Meeting Code">
+                                        <button id="copyUrl" class="inline-flex items-center px-3 py-2 border border-l-0 border-gray-300 bg-gray-50 text-gray-500 rounded-r-md hover:text-gray-700 focus:outline-none">
+                                            <i class="fas fa-copy"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <button id="joinRoom" class="w-full btn-primary inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                                    <i class="fas fa-sign-in-alt mr-2"></i> Enter Meeting Now
+                                </button>
+                            </div>
+                        </div>
+                        <div id="joinExistingForm" class="hidden">
+                            <h3 class="text-lg font-medium text-gray-900 mb-4">Join an Existing Meeting</h3>
+                            <div class="space-y-4">
+                                <div>
+                                    <label for="roomCode" class="block text-sm font-medium text-gray-700 mb-1">Enter meeting code:</label>
+                                    <input type="text" id="roomCode" class="block w-full px-3 py-2 rounded-md border border-gray-300 shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" placeholder="Enter meeting code">
+                                </div>
+                                <button id="joinWithCode" class="w-full btn-primary inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                                    <i class="fas fa-door-open mr-2"></i> Join Meeting
+                                </button>
+                                <button id="cancelJoin" class="w-full btn-secondary inline-flex justify-center items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                                    <i class="fas fa-times mr-2"></i> Cancel
+                                </button>
+                            </div>
+                        </div>
+                        <div id="defaultCard" class="text-center py-8 space-y-4">
+                            <div class="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-indigo-100">
+                                <i class="fas fa-hands text-indigo-600 text-2xl"></i>
+                            </div>
+                            <h3 class="text-lg font-medium text-gray-900">Sign Language Translation</h3>
+                            <p class="text-gray-600">Start or join a meeting to experience accessible video calling with automatic sign language translation.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Features Section -->
+    <div class="py-12 bg-white">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="lg:text-center">
+                <h2 class="text-base text-indigo-600 font-semibold tracking-wide uppercase">Features</h2>
+                <p class="mt-2 text-3xl leading-8 font-extrabold tracking-tight text-gray-900 sm:text-4xl">
+                    Breaking communication barriers
+                </p>
+                <p class="mt-4 max-w-2xl text-xl text-gray-500 lg:mx-auto">
+                    Making video calls more accessible with real-time sign language translation.
+                </p>
+            </div>
+
+            <div class="mt-10">
+                <div class="grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-3">
+                    <div class="flex flex-col items-center">
+                        <div class="flex items-center justify-center h-12 w-12 rounded-md feature-icon text-white mb-4">
+                            <i class="fas fa-language"></i>
+                        </div>
+                        <h3 class="text-lg font-medium text-gray-900">Two-way Translation</h3>
+                        <p class="mt-2 text-base text-gray-500 text-center">
+                            Speech is converted to sign language visualizations, and sign language gestures are detected and translated for seamless two-way communication.
+                        </p>
+                    </div>
+
+                    <div class="flex flex-col items-center">
+                        <div class="flex items-center justify-center h-12 w-12 rounded-md feature-icon text-white mb-4">
+                            <i class="fas fa-video"></i>
+                        </div>
+                        <h3 class="text-lg font-medium text-gray-900">High-Quality Video</h3>
+                        <p class="mt-2 text-base text-gray-500 text-center">
+                            Enjoy seamless HD video calls with minimal latency for clear communication.
+                        </p>
+                    </div>
+
+                    <div class="flex flex-col items-center">
+                        <div class="flex items-center justify-center h-12 w-12 rounded-md feature-icon text-white mb-4">
+                            <i class="fas fa-lock"></i>
+                        </div>
+                        <h3 class="text-lg font-medium text-gray-900">Secure Meetings</h3>
+                        <p class="mt-2 text-base text-gray-500 text-center">
+                            All calls are encrypted and secure, ensuring your conversations remain private.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- How It Works Section -->
+    <div class="py-12 bg-gray-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="lg:text-center mb-10">
+                <h2 class="text-base text-indigo-600 font-semibold tracking-wide uppercase">How It Works</h2>
+                <p class="mt-2 text-3xl leading-8 font-extrabold tracking-tight text-gray-900 sm:text-4xl">
+                    Simple steps to get started
+                </p>
+            </div>
+            
+            <div class="flex flex-col md:flex-row justify-between items-center gap-8">
+                <div class="bg-white rounded-lg shadow-md p-6 md:w-1/3">
+                    <div class="text-center">
+                        <div class="inline-flex items-center justify-center h-12 w-12 rounded-full bg-indigo-100 text-indigo-600 mb-4">
+                            1
+                        </div>
+                        <h3 class="text-lg font-medium text-gray-900 mb-2">Create a Meeting</h3>
+                        <p class="text-gray-600">Click "Create New Meeting" button to generate a unique meeting link.</p>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-lg shadow-md p-6 md:w-1/3">
+                    <div class="text-center">
+                        <div class="inline-flex items-center justify-center h-12 w-12 rounded-full bg-indigo-100 text-indigo-600 mb-4">
+                            2
+                        </div>
+                        <h3 class="text-lg font-medium text-gray-900 mb-2">Share the Link</h3>
+                        <p class="text-gray-600">Copy the link and share it with the participants you want to invite.</p>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-lg shadow-md p-6 md:w-1/3">
+                    <div class="text-center">
+                        <div class="inline-flex items-center justify-center h-12 w-12 rounded-full bg-indigo-100 text-indigo-600 mb-4">
+                            3
+                        </div>
+                        <h3 class="text-lg font-medium text-gray-900 mb-2">Start Communicating</h3>
+                        <p class="text-gray-600">Enjoy accessible communication with real-time sign language translation.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800">
+        <div class="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center flex-col md:flex-row">
+                <div class="flex items-center mb-6 md:mb-0">
+                    <i class="fas fa-hands text-indigo-400 text-2xl mr-2"></i>
+                    <span class="text-white font-semibold text-lg">SignConnect</span>
+                </div>
+                <div class="flex space-x-6">
+                    <a href="#" class="text-gray-400 hover:text-white">
+                        <span class="sr-only">About</span>
+                        <i class="fas fa-info-circle"></i>
+                    </a>
+                    <a href="#" class="text-gray-400 hover:text-white">
+                        <span class="sr-only">Privacy</span>
+                        <i class="fas fa-shield-alt"></i>
+                    </a>
+                    <a href="#" class="text-gray-400 hover:text-white">
+                        <span class="sr-only">Terms</span>
+                        <i class="fas fa-file-contract"></i>
+                    </a>
+                    <a href="#" class="text-gray-400 hover:text-white">
+                        <span class="sr-only">Contact</span>
+                        <i class="fas fa-envelope"></i>
+                    </a>
+                </div>
+            </div>
+            <div class="mt-8 border-t border-gray-700 pt-8 md:flex md:items-center md:justify-between">
+                <div class="flex space-x-6 md:order-2">
+                    <a href="#" class="text-gray-400 hover:text-white">
+                        <i class="fab fa-facebook"></i>
+                    </a>
+                    <a href="#" class="text-gray-400 hover:text-white">
+                        <i class="fab fa-twitter"></i>
+                    </a>
+                    <a href="#" class="text-gray-400 hover:text-white">
+                        <i class="fab fa-instagram"></i>
+                    </a>
+                    <a href="#" class="text-gray-400 hover:text-white">
+                        <i class="fab fa-github"></i>
+                    </a>
+                </div>
+                <p class="mt-8 text-base text-gray-400 md:mt-0 md:order-1">
+                    &copy; 2025 SignConnect. All rights reserved.
+                </p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // UI interaction functionality
+        document.getElementById('createRoom').addEventListener('click', async () => {
+            // Hide default card
+            document.getElementById('defaultCard').classList.add('hidden');
+            // Hide join form if visible
+            document.getElementById('joinExistingForm').classList.add('hidden');
+            // Show room info with loading state
+            document.getElementById('roomInfo').classList.remove('hidden');
+            document.getElementById('roomUrl').value = "Creating meeting...";
+            document.getElementById('joinRoom').disabled = true;
+            document.getElementById('joinRoom').classList.add('opacity-50');
+
+            try {
+                const response = await fetch('/api/create-room', {
+                    method: 'POST'
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Update UI with room details
+                    // Generate the proper URL that includes our sign language features
+                    const baseUrl = window.location.origin;
+                    const roomCode = data.room_name;
+                    const properJoiningUrl = `${baseUrl}/join/${roomCode}`;
+                    
+                    // Display only the room code
+                    document.getElementById('roomUrl').value = roomCode;
+                    
+                    // Enable join button
+                    document.getElementById('joinRoom').disabled = false;
+                    document.getElementById('joinRoom').classList.remove('opacity-50');
+                    
+                    // Store room info for join button
+                    document.getElementById('joinRoom').setAttribute('data-room', roomCode);
+                    
+                    // Save the original Daily.co URL for reference but don't display it by default
+                    document.getElementById('joinRoom').setAttribute('data-daily-url', data.room_url);
+                    
+                    // Add animation to room URL to draw attention
+                    document.getElementById('roomUrl').classList.add('animate-pulse');
+                    setTimeout(() => {
+                        document.getElementById('roomUrl').classList.remove('animate-pulse');
+                    }, 1500);
+                } else {
+                    alert('Failed to create meeting: ' + data.error);
+                    // Reset UI
+                    document.getElementById('roomInfo').classList.add('hidden');
+                    document.getElementById('defaultCard').classList.remove('hidden');
+                }
+            } catch (error) {
+                alert('Error creating meeting: ' + error);
+                // Reset UI
+                document.getElementById('roomInfo').classList.add('hidden');
+                document.getElementById('defaultCard').classList.remove('hidden');
+            }
+        });
+
+        document.getElementById('copyUrl').addEventListener('click', () => {
+            const roomUrl = document.getElementById('roomUrl');
+            roomUrl.select();
+            document.execCommand('copy');
+            
+            // Visual feedback for copy action
+            const copyBtn = document.getElementById('copyUrl');
+            const originalIcon = copyBtn.innerHTML;
+            copyBtn.innerHTML = '<i class="fas fa-check text-green-500"></i>';
+            copyBtn.classList.add('text-green-500');
+            
+            setTimeout(() => {
+                copyBtn.innerHTML = originalIcon;
+                copyBtn.classList.remove('text-green-500');
+            }, 2000);
+        });
+
+        document.getElementById('joinRoom').addEventListener('click', () => {
+            const roomName = document.getElementById('joinRoom').getAttribute('data-room');
+            window.location.href = `/join/${roomName}`;
+        });
+
+        // Join existing meeting functionality
+        document.getElementById('joinExisting').addEventListener('click', () => {
+            document.getElementById('defaultCard').classList.add('hidden');
+            document.getElementById('roomInfo').classList.add('hidden');
+            document.getElementById('joinExistingForm').classList.remove('hidden');
+        });
+
+        document.getElementById('cancelJoin').addEventListener('click', () => {
+            document.getElementById('joinExistingForm').classList.add('hidden');
+            document.getElementById('defaultCard').classList.remove('hidden');
+        });
+
+        document.getElementById('joinWithCode').addEventListener('click', () => {
+            const roomCode = document.getElementById('roomCode').value.trim();
+            if (roomCode) {
+                window.location.href = `/join/${roomCode}`;
+            } else {
+                alert('Please enter a valid meeting code');
+            }
+        });
+
+        // Allow pressing Enter to join a meeting
+        document.getElementById('roomCode').addEventListener('keyup', (event) => {
+            if (event.key === 'Enter') {
+                document.getElementById('joinWithCode').click();
+            }
+        });
+    </script>
+</body>
+</html>

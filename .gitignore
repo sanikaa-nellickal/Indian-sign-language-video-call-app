@@ -1,0 +1,14 @@
+# Ignore virtual environment folder
+venv/
+
+# Ignore Python cache folders
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Optional: Ignore other common Python-related files
+.Python
+env/
+pip-log.txt
+pip-delete-this-directory.txt

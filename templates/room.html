@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SignConnect - Video Call</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script crossorigin src="https://unpkg.com/@daily-co/daily-js"></script>
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <style>
+        body, html {
+            height: 100vh;
+            margin: 0;
+            padding: 0;
+            background-color: #111827; /* Dark background */
+            color: #e5e7eb;
+        }
+        
+        .gradient-bg {
+            background: linear-gradient(120deg, #4f46e5 0%, #7c3aed 100%);
+        }
+        
+        .video-call-container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            background-color: #111827; /* Dark background */
+        }
+        
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .video-section {
+            flex: 1;
+            position: relative;
+        }
+        
+        /* Translation section */
+        .translation-section {
+            height: 230px;
+            background-color: #1f2937; /* Dark background */
+            padding: 16px;
+            border-top: 1px solid #374151; /* Darker border */
+            overflow-y: auto;
+        }
+        
+        /* Modify sign display for horizontal scrolling */
+        #signs-display {
+            display: flex;
+            flex-wrap: nowrap;
+            overflow-x: auto;
+            padding-bottom: 12px;
+            scrollbar-width: thin;
+            scrollbar-color: #6366f1 #374151; /* Updated scrollbar colors */
+        }
+        
+        #signs-display::-webkit-scrollbar {
+            height: 8px;
+        }
+        
+        #signs-display::-webkit-scrollbar-track {
+            background: #374151; /* Darker track */
+            border-radius: 4px;
+        }
+        
+        #signs-display::-webkit-scrollbar-thumb {
+            background-color: #6366f1;
+            border-radius: 4px;
+        }
+        
+        .controls-bar {
+            padding: 16px;
+            background-color: #1a202c; /* Dark background */
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+            border-top: 1px solid #374151; /* Darker border */
+        }
+        
+        .speaker-info {
+            position: absolute;
+            bottom: 16px;
+            left: 16px;
+            background-color: rgba(79, 70, 229, 0.8);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            z-index: 100;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        }
+        
+        /* Word container styling */
+        .word-container {
+            flex: 0 0 auto;
+            display: inline-flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 8px;
+            padding: 12px;
+            border: 1px solid #374151; /* Darker border */
+            border-radius: 12px;
+            background-color: #2d3748; /* Dark background */
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+        
+        /* Signs container */
+        .signs-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        
+        /* Sign image styling */
+        .sign-image {
+            width: 80px;
+            height: 80px;
+            object-fit: contain;
+            border: 1px solid #4b5563; /* Darker border */
+            border-radius: 8px;
+            margin: 3px;
+            background-color: #374151; /* Darker background */
+        }
+        
+        /* Split screen layout for mobile */
+        @media (max-width: 768px) {
+            .translation-section {
+                height: 280px;
+            }
+            
+            .controls-bar {
+                flex-wrap: wrap;
+            }
+        }
+        
+        .tab-content {
+            display: block;
+        }
+        
+        /* Hand sign recognition video */
+        #webcam-container {
+            position: absolute;
+            right: 16px;
+            bottom: 16px;
+            width: 220px;
+            height: 165px;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 2px solid #4f46e5;
+            z-index: 50;
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+        }
+        
+        #my-webcam {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        #canvas {
+            display: none;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(90deg, #4f46e5 0%, #7c3aed 100%);
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(79, 70, 229, 0.15);
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 10px rgba(79, 70, 229, 0.3);
+        }
+        
+        .btn-secondary {
+            background: #2d3748; /* Dark background */
+            color: #a5b4fc; /* Light indigo */
+            border: 1px solid #4f46e5;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-secondary:hover {
+            background-color: #374151; /* Slight lighter on hover */
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px rgba(79, 70, 229, 0.2);
+        }
+        
+        .btn-danger {
+            background: linear-gradient(90deg, #ef4444 0%, #dc2626 100%);
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(239, 68, 68, 0.15);
+        }
+        
+        .btn-danger:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 10px rgba(239, 68, 68, 0.3);
+        }
+        
+        .status-container {
+            border-radius: 8px;
+            padding: 10px;
+            background-color: #1a202c; /* Dark background */
+            border: 1px solid #374151; /* Darker border */
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+    </style>
+</head>
+<body class="bg-gray-900">
+    <div class="video-call-container">
+        <div class="main-content">
+            <div class="video-section">
+                <div id="video-container" class="w-full h-full bg-gray-900"></div>
+                <div id="speaker-info" class="speaker-info hidden">
+                    <i class="fas fa-user-alt mr-2"></i>
+                    <span id="speaker-name">Someone is speaking</span>
+                </div>
+                
+                <!-- Add webcam container for hand sign detection -->
+                <div id="webcam-container" class="hidden">
+                    <video id="my-webcam" autoplay playsinline></video>
+                    <canvas id="canvas"></canvas>
+                </div>
+            </div>
+            
+            <!-- Translation section -->
+            <div class="translation-section">
+                <!-- Sign language display -->
+                <div class="flex items-center mb-3">
+                    <i class="fas fa-hands text-indigo-400 text-xl mr-2"></i>
+                    <h3 class="text-lg font-semibold text-indigo-200">Sign Language Translation</h3>
+                </div>
+                
+                <div id="signs-tab" class="tab-content active">
+                    <div id="signs-display" class="flex overflow-x-auto py-2">
+                        <div class="flex items-center justify-center w-full p-4 text-gray-400">
+                            <i class="fas fa-info-circle mr-2 text-indigo-400"></i> Joining call...
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Status bar -->
+                <div class="mt-4 status-container">
+                    <p id="status" class="text-gray-600 flex items-center">
+                        <i class="fas fa-info-circle mr-2 text-indigo-500"></i>
+                        Status: Connecting to the meeting...
+                    </p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Control buttons that will be shown after joining the call -->
+        <div id="controls-bar" class="controls-bar" style="display: none;">
+            <button id="toggleTranslation" class="btn-primary px-6 py-3 text-white rounded-md text-base font-medium flex items-center">
+                <i class="fas fa-microphone mr-2"></i> Start Translation
+            </button>
+            <button id="toggleHandSign" class="btn-primary px-6 py-3 text-white rounded-md text-base font-medium flex items-center">
+                <i class="fas fa-hands mr-2"></i> Start Sign Detection
+            </button>
+            <button id="leaveCall" class="btn-danger px-6 py-3 text-white rounded-md text-base font-medium flex items-center">
+                <i class="fas fa-phone-slash mr-2"></i> Leave Call
+            </button>
+        </div>
+        
+        <!-- Loading indication while joining -->
+        <div id="joining-indicator" class="controls-bar">
+            <div class="flex items-center justify-center">
+                <div class="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-indigo-500 mr-3"></div>
+                <span class="text-indigo-700 font-medium">Joining meeting...</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let callFrame;
+        let recognition;
+        let currentSpeaker = null;
+        let socket;
+        let webcamStream = null;
+        let frameInterval = null;
+        let isHandSignActive = false;
+        let detectedSigns = [];
+        
+        // Initialize Socket.IO connection
+        function initializeSocket() {
+            // Connect to the server
+            socket = io.connect(window.location.origin);
+            
+            // Socket.IO connection event handlers
+            socket.on('connect', () => {
+                console.log('Connected to server via Socket.IO');
+                updateStatus('Connected to sign recognition server', 'text-indigo-600');
+            });
+            
+            socket.on('disconnect', () => {
+                console.log('Disconnected from server');
+                updateStatus('Disconnected from sign recognition server', 'text-gray-600');
+            });
+            
+            // Listen for sign predictions from the server
+            socket.on('prediction', (data) => {
+                console.log('Received sign prediction:', data);
+                if (data.sign) {
+                    // Add the detected sign to our collection
+                    detectedSigns.push(data.sign);
+                    
+                    // Display the detected signs as a "sentence"
+                    displayDetectedSigns();
+                    
+                    // Send the detected sign to other participants
+                    if (callFrame) {
+                        callFrame.sendAppMessage({ 
+                            type: 'detected_sign', 
+                            sign: data.sign,
+                            speaker: callFrame.participants().local.user_name || 'Me'
+                        }, '*');
+                    }
+                }
+            });
+            
+            // Listen for transition ready events
+            socket.on('transition_ready', (data) => {
+                console.log('Hand transition detected, ready for next sign');
+            });
+        }
+        
+        // Helper function to update status with icon
+        function updateStatus(message, className = 'text-gray-600') {
+            const statusElement = document.getElementById('status');
+            statusElement.innerHTML = `<i class="fas fa-info-circle mr-2 text-indigo-500"></i> ${message}`;
+            statusElement.className = className;
+        }
+        
+        // Display detected signs in the signs display area
+        function displayDetectedSigns() {
+            const signsText = detectedSigns.join('');
+            
+            // Create a custom display for detected signs as text characters
+            const signsDisplay = document.getElementById('signs-display');
+            signsDisplay.innerHTML = '';
+            
+            if (!signsText) {
+                signsDisplay.innerHTML = '<div class="flex items-center justify-center w-full p-4 text-gray-400"><i class="fas fa-info-circle mr-2 text-indigo-400"></i> No signs detected yet</div>';
+                return;
+            }
+            
+            // For each character in the signsText, create a display box
+            signsText.split('').forEach(char => {
+                // Create a container for the character
+                const signContainer = document.createElement('div');
+                signContainer.className = 'word-container';
+                
+                // Create a text element for the character
+                const signText = document.createElement('div');
+                signText.className = 'text-2xl font-medium text-indigo-300 flex items-center justify-center h-16 w-16';
+                signText.textContent = char;
+                
+                // Add the text to the container
+                signContainer.appendChild(signText);
+                
+                // Add the container to the display
+                signsDisplay.appendChild(signContainer);
+            });
+            
+            // Auto-scroll to the end to show the latest sign
+            signsDisplay.scrollLeft = signsDisplay.scrollWidth;
+            
+            // Show speaker info
+            const localParticipant = callFrame.participants().local;
+            const speakerName = localParticipant.user_name || 'Me';
+            document.getElementById('speaker-name').textContent = `${speakerName} is signing`;
+            document.getElementById('speaker-info').classList.remove('hidden');
+        }
+        
+        // Initialize webcam for hand sign detection
+        async function initializeWebcam() {
+            try {
+                const video = document.getElementById('my-webcam');
+                
+                // Request webcam access with specific constraints for better hand detection
+                const constraints = {
+                    video: {
+                        width: { ideal: 640 },
+                        height: { ideal: 480 },
+                        frameRate: { ideal: 30 }
+                    }
+                };
+                
+                webcamStream = await navigator.mediaDevices.getUserMedia(constraints);
+                video.srcObject = webcamStream;
+                
+                // Show webcam container
+                document.getElementById('webcam-container').classList.remove('hidden');
+                
+                return true;
+            } catch (error) {
+                console.error('Error accessing webcam:', error);
+                updateStatus('Error: Could not access webcam', 'text-red-600');
+                return false;
+            }
+        }
+        
+        // Capture and send frames to the server
+        function startFrameCapture() {
+            const video = document.getElementById('my-webcam');
+            const canvas = document.getElementById('canvas');
+            const context = canvas.getContext('2d');
+            
+            // Set canvas dimensions to match the video
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            
+            // Check if hand is present in frame
+            let handPresent = true;
+            
+            // Capture and send frames at regular intervals
+            frameInterval = setInterval(() => {
+                // Draw the current frame on the canvas
+                context.drawImage(video, 0, 0, canvas.width, canvas.height);
+                
+                // Convert the canvas content to a base64 encoded image
+                const frameData = canvas.toDataURL('image/jpeg', 0.7);
+                
+                // Send the frame to the server for processing
+                socket.emit('frame', { 
+                    frame: frameData,
+                    hand_present: handPresent
+                });
+                
+            }, 200); // Adjust interval as needed for performance (200ms = 5fps)
+        }
+        
+        // Toggle hand sign detection
+        function toggleHandSign() {
+            if (!isHandSignActive) {
+                // Start hand sign detection
+                initializeWebcam().then(success => {
+                    if (success) {
+                        // Clear previous detected signs when starting
+                        detectedSigns = [];
+                        // Clear the display area
+                        document.getElementById('signs-display').innerHTML = '';
+                        
+                        // Wait for webcam to initialize
+                        setTimeout(() => {
+                            startFrameCapture();
+                            isHandSignActive = true;
+                            document.getElementById('toggleHandSign').innerHTML = '<i class="fas fa-hand-paper mr-2"></i> Stop Sign Detection';
+                            document.getElementById('toggleHandSign').classList.add('bg-indigo-700');
+                            updateStatus('Hand sign detection active', 'text-indigo-600 font-medium');
+                        }, 1000);
+                    }
+                });
+            } else {
+                // Stop hand sign detection
+                if (frameInterval) {
+                    clearInterval(frameInterval);
+                    frameInterval = null;
+                }
+                
+                if (webcamStream) {
+                    webcamStream.getTracks().forEach(track => track.stop());
+                    webcamStream = null;
+                }
+                
+                // Hide webcam container
+                document.getElementById('webcam-container').classList.add('hidden');
+                
+                // Clear detected signs
+                detectedSigns = [];
+                // Clear the display area
+                document.getElementById('signs-display').innerHTML = '<div class="flex items-center justify-center w-full p-4 text-gray-400"><i class="fas fa-info-circle mr-2 text-indigo-400"></i> Sign detection stopped</div>';
+                
+                isHandSignActive = false;
+                document.getElementById('toggleHandSign').innerHTML = '<i class="fas fa-hands mr-2"></i> Start Sign Detection';
+                document.getElementById('toggleHandSign').classList.remove('bg-indigo-700');
+                updateStatus('Hand sign detection stopped', 'text-gray-600');
+                
+                // Reset transition state on the server
+                socket.emit('reset_transition');
+            }
+        }
+        
+        // Function to display signs grouped by word but without word labels
+        function displaySignsForWordsNoLabels(text) {
+            const signsDisplay = document.getElementById('signs-display');
+            signsDisplay.innerHTML = '';
+            
+            console.log('Text received for words:', text);
+            
+            // Split the text into words
+            const words = text.trim().split(/\s+/);
+            console.log('Words extracted:', words);
+            
+            if (words.length === 0 || (words.length === 1 && words[0] === '')) {
+                console.log('No words found in text');
+                signsDisplay.innerHTML = '<div class="flex items-center justify-center w-full p-4 text-gray-500"><i class="fas fa-info-circle mr-2"></i> No signs to display yet</div>';
+                return;
+            }
+            
+            // For each word, create a container (without word label)
+            words.forEach(word => {
+                // Create a container for the word
+                const wordContainer = document.createElement('div');
+                wordContainer.className = 'word-container';
+                
+                // Create a signs container for this word
+                const signsContainer = document.createElement('div');
+                signsContainer.className = 'signs-container';
+                
+                // Extract letters from the word
+                const letters = word.toLowerCase().replace(/[^a-z0-9]/g, '').split('');
+                
+                // Skip empty words
+                if (letters.length === 0) return;
+                
+                // Display signs for each letter in the word
+                letters.forEach(letter => {
+                    // Create and add the image
+                    const img = document.createElement('img');
+                    const imgPath = `/static/signs/${letter}.jpg`;
+                    
+                    img.src = imgPath;
+                    img.alt = `Sign for ${letter}`;
+                    img.className = 'sign-image';
+                    
+                    img.onerror = function() {
+                        console.error(`Failed to load image for letter "${letter}" from path: ${imgPath}`);
+                        // Create a placeholder for missing images
+                        const placeholder = document.createElement('div');
+                        placeholder.className = 'sign-image flex items-center justify-center bg-indigo-900 border border-indigo-700 text-indigo-300 font-bold text-xl';
+                        placeholder.textContent = letter.toUpperCase();
+                        this.replaceWith(placeholder);
+                    };
+                    
+                    img.onload = function() {
+                        console.log(`Successfully loaded image for letter "${letter}" from path: ${imgPath}`);
+                    };
+                    
+                    signsContainer.appendChild(img);
+                });
+                
+                // Add the signs container to the word container
+                wordContainer.appendChild(signsContainer);
+                
+                // Add the word container to the main display
+                signsDisplay.appendChild(wordContainer);
+            });
+            
+            // Auto-scroll to the end to show the latest word
+            signsDisplay.scrollLeft = signsDisplay.scrollWidth;
+        }
+        
+        // The old display functions are kept for compatibility but redirected
+        function displaySigns(text) {
+            displaySignsForWordsNoLabels(text);
+        }
+        
+        function displaySignsForWords(text) {
+            displaySignsForWordsNoLabels(text);
+        }
+        
+        // Initialize speech recognition
+        function initializeSpeechRecognition() {
+            if (!(window.SpeechRecognition || window.webkitSpeechRecognition)) {
+                alert("Speech recognition is not supported in your browser. Please use Chrome.");
+                return false;
+            }
+            
+            try {
+                recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+                recognition.continuous = true;
+                recognition.interimResults = true;
+                recognition.lang = 'en-US';
+                
+                recognition.onstart = function() {
+                    console.log('Speech recognition started');
+                    updateStatus('Listening for speech...', 'text-green-600 font-medium');
+                };
+                
+                recognition.onend = function() {
+                    console.log('Speech recognition ended');
+                    updateStatus('Speech recognition stopped', 'text-gray-600');
+                };
+                
+                // This is where we process the speech recognition results
+                recognition.onresult = function(event) {
+                    console.log('Got speech result:', event);
+                    
+                    // Process results - creating a transcript from all results
+                    let finalTranscript = '';
+                    let interimTranscript = '';
+                    
+                    for (let i = 0; i < event.results.length; i++) {
+                        if (event.results[i].isFinal) {
+                            finalTranscript += event.results[i][0].transcript + ' ';
+                        } else {
+                            interimTranscript += event.results[i][0].transcript;
+                        }
+                    }
+                    
+                    // Combine transcripts, but don't add double spaces
+                    const fullTranscript = (finalTranscript + interimTranscript).trim();
+                    console.log('Full transcript:', fullTranscript);
+                    
+                    // Get local participant name from Daily.co
+                    const localParticipant = callFrame.participants().local;
+                    const speakerName = localParticipant.user_name || 'Me';
+                    
+                    // Display signs grouped by words but without word labels
+                    displaySignsForWordsNoLabels(fullTranscript);
+                    
+                    // Show speaker info
+                    document.getElementById('speaker-name').textContent = `${speakerName} is speaking`;
+                    document.getElementById('speaker-info').classList.remove('hidden');
+                    
+                    // Send the transcript to other participants
+                    if (callFrame) {
+                        callFrame.sendAppMessage({ 
+                            type: 'transcript', 
+                            text: fullTranscript,
+                            speaker: speakerName
+                        }, '*');
+                    }
+                };
+                
+                recognition.onerror = function(event) {
+                    console.error('Speech recognition error:', event.error);
+                    updateStatus(`Error: ${event.error}`, 'text-red-600');
+                };
+                
+                return true;
+            } catch (error) {
+                console.error('Error initializing speech recognition:', error);
+                alert('Error setting up speech recognition: ' + error.message);
+                return false;
+            }
+        }
+        
+        // Toggle translation
+        function toggleTranslation() {
+            if (!recognition && !initializeSpeechRecognition()) {
+                return;
+            }
+            
+            if (document.getElementById('toggleTranslation').innerHTML.includes('Start')) {
+                try {
+                    // Clear the display area when starting
+                    document.getElementById('signs-display').innerHTML = '';
+                    
+                    recognition.start();
+                    document.getElementById('toggleTranslation').innerHTML = '<i class="fas fa-microphone-slash mr-2"></i> Stop Translation';
+                    document.getElementById('toggleTranslation').classList.add('bg-indigo-700');
+                } catch (e) {
+                    console.error('Error starting recognition:', e);
+                    alert('Failed to start speech recognition: ' + e.message);
+                }
+            } else {
+                try {
+                    recognition.stop();
+                    document.getElementById('toggleTranslation').innerHTML = '<i class="fas fa-microphone mr-2"></i> Start Translation';
+                    document.getElementById('toggleTranslation').classList.remove('bg-indigo-700');
+                    
+                    // Clear the display area when stopping
+                    document.getElementById('signs-display').innerHTML = '<div class="flex items-center justify-center w-full p-4 text-gray-400"><i class="fas fa-info-circle mr-2 text-indigo-400"></i> Speech translation stopped</div>';
+                } catch (e) {
+                    console.error('Error stopping recognition:', e);
+                }
+            }
+        }
+        
+        // Initialize video call
+        async function initializeCall() {
+            try {
+                // Create the Daily call frame
+                callFrame = DailyIframe.createFrame(
+                    document.getElementById('video-container'),
+                    {
+                        iframeStyle: {
+                            width: '100%',
+                            height: '100%',
+                            border: '0',
+                            borderRadius: '12px'
+                        },
+                        showLeaveButton: false,
+                        showFullscreenButton: true
+                    }
+                );
+                
+                // Listen for messages from other participants
+                callFrame.on('app-message', (event) => {
+                    if (event.data && event.data.type === 'transcript') {
+                        console.log('Received transcript from another participant:', event.data);
+                        
+                        // Update sign language display with word grouping but no labels
+                        displaySignsForWordsNoLabels(event.data.text);
+                        
+                        // Show who is speaking
+                        const speakerName = event.data.speaker || 'Someone';
+                        
+                        // Make the speaker info very visible
+                        const speakerInfo = document.getElementById('speaker-info');
+                        document.getElementById('speaker-name').textContent = `${speakerName} is speaking`;
+                        speakerInfo.classList.remove('hidden');
+                        
+                        // Add a notification in the status area too
+                        updateStatus(`Receiving message from: ${speakerName}`, 'text-blue-600 font-medium');
+                    }
+                    else if (event.data && event.data.type === 'detected_sign') {
+                        console.log('Received detected sign from another participant:', event.data);
+                        
+                        // Show who is signing
+                        const speakerName = event.data.speaker || 'Someone';
+                        
+                        // Add the sign to our display
+                        detectedSigns.push(event.data.sign);
+                        
+                        // Use the custom display function for detected signs
+                        displayDetectedSigns();
+                        
+                        // Make the speaker info very visible
+                        const speakerInfo = document.getElementById('speaker-info');
+                        document.getElementById('speaker-name').textContent = `${speakerName} is signing`;
+                        speakerInfo.classList.remove('hidden');
+                        
+                        // Add a notification in the status area too
+                        updateStatus(`Receiving sign from: ${speakerName}`, 'text-green-600 font-medium');
+                    }
+                });
+
+                // Join the call
+                await callFrame.join({
+                    url: 'https://translator.daily.co/{{ room_name }}'
+                });
+                
+                // Call has been joined, show controls and hide loading indicator
+                document.getElementById('joining-indicator').style.display = 'none';
+                document.getElementById('controls-bar').style.display = 'flex';
+                updateStatus('Successfully joined the meeting. Ready to translate.', 'text-green-600 font-medium');
+                document.getElementById('signs-display').innerHTML = '<div class="flex items-center justify-center w-full p-4 text-gray-400"><i class="fas fa-info-circle mr-2 text-indigo-400"></i> Click "Start Translation" or "Start Sign Detection" to begin</div>';
+
+                // Initialize Socket.IO connection
+                initializeSocket();
+
+                // Set up translation button
+                document.getElementById('toggleTranslation').addEventListener('click', toggleTranslation);
+                
+                // Set up hand sign detection button
+                document.getElementById('toggleHandSign').addEventListener('click', toggleHandSign);
+
+                // Set up leave call button
+                document.getElementById('leaveCall').addEventListener('click', () => {
+                    if (recognition) {
+                        recognition.stop();
+                    }
+                    
+                    // Stop hand sign detection if active
+                    if (isHandSignActive) {
+                        toggleHandSign();
+                    }
+                    
+                    // Disconnect from Socket.IO
+                    if (socket) {
+                        socket.disconnect();
+                    }
+                    
+                    callFrame.leave().then(() => {
+                        window.location.href = '/';
+                    });
+                });
+
+            } catch (error) {
+                console.error('Error initializing call:', error);
+                updateStatus('Failed to initialize call: ' + error.message, 'text-red-600 font-medium');
+            }
+        }
+
+        window.onload = initializeCall;
+    </script>
+</body>
+</html>
