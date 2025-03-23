@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SignConnect - Sign In</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        .gradient-bg {
+            background: linear-gradient(120deg, #4f46e5 0%, #7c3aed 100%);
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 1rem;
+            box-shadow: 0 8px 32px rgba(31, 38, 135, 0.15);
+        }
+        .btn-primary {
+            background: linear-gradient(90deg, #4f46e5 0%, #7c3aed 100%);
+            transition: all 0.3s ease;
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(79, 70, 229, 0.2);
+        }
+        .input-field {
+            @apply block w-full px-4 py-3 mt-1 text-gray-700 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500;
+        }
+        .toggle-container {
+            overflow: hidden;
+            position: relative;
+        }
+        .toggle-form {
+            transition: transform 0.5s ease-in-out;
+        }
+        .animation-pulse {
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(79, 70, 229, 0.7);
+            }
+            70% {
+                box-shadow: 0 0 0 10px rgba(79, 70, 229, 0);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(79, 70, 229, 0);
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen gradient-bg flex items-center justify-center">
+    <div class="container mx-auto px-4 py-16">
+        <div class="max-w-md mx-auto">
+            <!-- Logo and title -->
+            <div class="text-center mb-8">
+                <div class="flex items-center justify-center">
+                    <i class="fas fa-hands text-white text-4xl mr-3"></i>
+                    <h1 class="text-4xl font-bold text-white">SignConnect</h1>
+                </div>
+                <p class="mt-3 text-indigo-100 text-lg">Breaking communication barriers</p>
+            </div>
+            
+            <!-- Card container -->
+            <div class="glass-card p-8">
+                <!-- Tabs -->
+                <div class="flex justify-center mb-6">
+                    <button id="login-tab" class="px-4 py-2 text-indigo-600 font-medium border-b-2 border-indigo-600 mr-4 focus:outline-none">Sign In</button>
+                    <button id="register-tab" class="px-4 py-2 text-gray-500 font-medium border-b-2 border-transparent focus:outline-none">Sign Up</button>
+                </div>
+                
+                <!-- Flash messages -->
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        {% for category, message in messages %}
+                        <div class="mb-4 {% if category == 'error' %}bg-red-100 text-red-700{% else %}bg-green-100 text-green-700{% endif %} p-3 rounded-md">
+                            {{ message }}
+                        </div>
+                        {% endfor %}
+                    {% endif %}
+                {% endwith %}
+                
+                <!-- Form container -->
+                <div class="toggle-container">
+                    <div id="login-form" class="toggle-form">
+                        <form action="{{ url_for('login') }}" method="POST">
+                            <div class="mb-4">
+                                <label for="login-email" class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                                <input type="email" id="login-email" name="email" class="input-field" placeholder="your@email.com" required>
+                            </div>
+                            <div class="mb-6">
+                                <label for="login-password" class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                                <input type="password" id="login-password" name="password" class="input-field" placeholder="Your password" required>
+                                <a href="#" class="text-sm text-indigo-600 hover:text-indigo-800 mt-1 inline-block">Forgot password?</a>
+                            </div>
+                            <button type="submit" class="btn-primary w-full text-white font-medium py-3 px-4 rounded-md">
+                                Sign In
+                            </button>
+                        </form>
+                    </div>
+                    
+                    <div id="register-form" class="toggle-form hidden">
+                        <form action="{{ url_for('register') }}" method="POST">
+                            <div class="mb-4">
+                                <label for="register-username" class="block text-sm font-medium text-gray-700 mb-1">Username</label>
+                                <input type="text" id="register-username" name="username" class="input-field" placeholder="Choose a username" required>
+                            </div>
+                            <div class="mb-4">
+                                <label for="register-email" class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                                <input type="email" id="register-email" name="email" class="input-field" placeholder="your@email.com" required>
+                            </div>
+                            <div class="mb-4">
+                                <label for="register-password" class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                                <input type="password" id="register-password" name="password" class="input-field" placeholder="Choose a secure password" required>
+                            </div>
+                            <div class="mb-6">
+                                <label for="register-confirm" class="block text-sm font-medium text-gray-700 mb-1">Confirm Password</label>
+                                <input type="password" id="register-confirm" name="confirm_password" class="input-field" placeholder="Confirm your password" required>
+                            </div>
+                            <button type="submit" class="btn-primary w-full text-white font-medium py-3 px-4 rounded-md">
+                                Create Account
+                            </button>
+                        </form>
+                    </div>
+                </div>
+                
+                <!-- Social login options -->
+                <div class="mt-6">
+                    <div class="relative">
+                        <div class="absolute inset-0 flex items-center">
+                            <div class="w-full border-t border-gray-300"></div>
+                        </div>
+                        <div class="relative flex justify-center text-sm">
+                            <span class="px-2 bg-white text-gray-500">Or continue with</span>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-6 grid grid-cols-2 gap-3">
+                        <button type="button" class="py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white flex justify-center items-center text-sm font-medium text-gray-700 hover:bg-gray-50">
+                            <i class="fab fa-google text-red-500 mr-2"></i>
+                            Google
+                        </button>
+                        <button type="button" class="py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white flex justify-center items-center text-sm font-medium text-gray-700 hover:bg-gray-50">
+                            <i class="fab fa-microsoft text-blue-500 mr-2"></i>
+                            Microsoft
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Footer -->
+            <div class="text-center mt-8">
+                <p class="text-sm text-indigo-200">
+                    &copy; 2025 SignConnect. All rights reserved.
+                </p>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Tab switching functionality
+        const loginTab = document.getElementById('login-tab');
+        const registerTab = document.getElementById('register-tab');
+        const loginForm = document.getElementById('login-form');
+        const registerForm = document.getElementById('register-form');
+        
+        loginTab.addEventListener('click', () => {
+            // Update tabs
+            loginTab.classList.add('text-indigo-600', 'border-indigo-600');
+            loginTab.classList.remove('text-gray-500', 'border-transparent');
+            registerTab.classList.add('text-gray-500', 'border-transparent');
+            registerTab.classList.remove('text-indigo-600', 'border-indigo-600');
+            
+            // Show login form, hide register form
+            loginForm.classList.remove('hidden');
+            registerForm.classList.add('hidden');
+        });
+        
+        registerTab.addEventListener('click', () => {
+            // Update tabs
+            registerTab.classList.add('text-indigo-600', 'border-indigo-600');
+            registerTab.classList.remove('text-gray-500', 'border-transparent');
+            loginTab.classList.add('text-gray-500', 'border-transparent');
+            loginTab.classList.remove('text-indigo-600', 'border-indigo-600');
+            
+            // Show register form, hide login form
+            registerForm.classList.remove('hidden');
+            loginForm.classList.add('hidden');
+        });
+        
+        // Password validation
+        const registerPassword = document.getElementById('register-password');
+        const registerConfirm = document.getElementById('register-confirm');
+        
+        function validatePassword() {
+            if (registerPassword.value !== registerConfirm.value) {
+                registerConfirm.setCustomValidity("Passwords don't match");
+            } else {
+                registerConfirm.setCustomValidity('');
+            }
+        }
+        
+        registerPassword.addEventListener('change', validatePassword);
+        registerConfirm.addEventListener('keyup', validatePassword);
+    </script>
+</body>
+</html>
