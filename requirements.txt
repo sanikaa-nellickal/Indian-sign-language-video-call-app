@@ -8,7 +8,7 @@ python-socketio==5.4.0
 tensorflow==2.19.0
 opencv-python==4.7.0.72
 mediapipe==0.10.20
-numpy==1.23.5
+numpy==2.2.0
 pandas==1.5.3
 pillow==9.5.0
 eventlet==0.33.3
