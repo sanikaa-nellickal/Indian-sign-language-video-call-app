@@ -532,7 +532,7 @@ if __name__ == '__main__':
             return "127.0.0.1"
     
     host = get_ip_address()
-    port = 8080
+    port = 8000
     
     local_url = f"http://localhost:{port}/"  # Changed to the root URL
     
